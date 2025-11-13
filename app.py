@@ -86,14 +86,24 @@ def get_weather_arica():
         }
 
 def convertir_divisa(monto, desde, hacia):
-    url = f"https://api.exchangerate.host/convert?from={desde}&to={hacia}&amount={monto}"
     try:
-        r = requests.get(url, timeout=5)
-        r.raise_for_status()
-        data = r.json()
-        return data.get("result")
-    except Exception:
-        return None
+        url = f"https://api.frankfurter.app/latest?amount={monto}&from={desde}&to={hacia}"
+        response = requests.get(url)
+
+        if response.status_code != 200:
+            return None, "No se pudo conectar al servicio de divisas."
+
+        data = response.json()
+
+        if "rates" not in data or hacia not in data["rates"]:
+            return None, "No se encontró la tasa de cambio solicitada."
+
+        resultado = data["rates"][hacia]
+        return resultado, None
+
+    except Exception as e:
+        return None, f"Error: {str(e)}"
+
 
 # ============================
 # UI PRINCIPAL
