@@ -44,6 +44,7 @@ def haversine_km(lat1, lon1, lat2, lon2):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return R * c
 
+
 def get_weather_arica():
     lat, lon = -18.48, -70.31
     url = (
@@ -85,25 +86,36 @@ def get_weather_arica():
             "descripcion": "Soleado (demo offline)",
         }
 
+
+# === Conversor de divisas con CurrencyAPI =====================
+
+API_KEY = st.secrets.get("CURRENCYAPI_KEY", "")
+
 def convertir_divisa(monto, desde, hacia):
+    if not API_KEY:
+        return None, "No hay API key configurada en los Secrets de Streamlit."
+
     try:
-        url = f"https://api.frankfurter.app/latest?amount={monto}&from={desde}&to={hacia}"
-        response = requests.get(url)
+        url = (
+            "https://api.currencyapi.com/v3/latest"
+            f"?apikey={API_KEY}&base_currency={desde}&currencies={hacia}"
+        )
+        response = requests.get(url, timeout=5)
 
         if response.status_code != 200:
             return None, "No se pudo conectar al servicio de divisas."
 
         data = response.json()
 
-        if "rates" not in data or hacia not in data["rates"]:
-            return None, "No se encontró la tasa de cambio solicitada."
+        if "data" not in data or hacia not in data["data"]:
+            return None, "No se encontró la tasa para esta moneda."
 
-        resultado = data["rates"][hacia]
+        rate = data["data"][hacia]["value"]
+        resultado = monto * rate
         return resultado, None
 
     except Exception as e:
         return None, f"Error: {str(e)}"
-
 
 
 # ============================
@@ -116,7 +128,10 @@ st.caption("Descubre la Región de Arica y Parinacota con recomendaciones cercan
 with st.container():
     col_l, col_r = st.columns([2, 1])
     with col_l:
-        st.text_input("🔍 ¿Qué quieres explorar hoy?", placeholder="Ej: playas tranquilas, miradores, museos...")
+        st.text_input(
+            "🔍 ¿Qué quieres explorar hoy?",
+            placeholder="Ej: playas tranquilas, miradores, museos..."
+        )
     with col_r:
         st.write("")
         st.write("")
@@ -160,7 +175,8 @@ with st.expander("Configurar ubicación (simulación GPS)", expanded=True):
 
 # calcular distancias
 filtrados_df["dist_km"] = filtrados_df.apply(
-    lambda row: haversine_km(lat_user, lon_user, row["lat"], row["lon"]), axis=1
+    lambda row: haversine_km(lat_user, lon_user, row["lat"], row["lon"]),
+    axis=1,
 )
 filtrados_df = filtrados_df.sort_values("dist_km")
 
@@ -197,14 +213,13 @@ monto = st.text_input("Monto", "10000")
 col1, col2 = st.columns(2)
 with col1:
     desde = st.selectbox("Desde", ["CLP", "USD", "EUR", "PEN", "ARS"])
-
 with col2:
     hacia = st.selectbox("Hacia", ["USD", "CLP", "EUR", "PEN", "ARS"])
 
 if st.button("Convertir"):
     try:
         monto_float = float(monto.replace(",", "."))
-    except:
+    except Exception:
         st.error("Formato de monto inválido.")
     else:
         resultado, error = convertir_divisa(monto_float, desde, hacia)
@@ -212,6 +227,10 @@ if st.button("Convertir"):
         if error:
             st.error(error)
         else:
+            st.success(f"{monto_float:.2f} {desde} = **{resultado:.2f} {hacia}**")
+
+st.caption("Fuente: currencyapi.com")
+
             st.success(f"{monto_float:.2f} {desde} = **{resultado:.2f} {hacia}**")
 
 st.caption("Fuente: frankfurter.app (Banco Central Europeo)")
