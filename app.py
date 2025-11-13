@@ -191,19 +191,28 @@ st.markdown("---")
 
 # 5) Conversor de divisas
 st.subheader("💱 Conversor de divisas rápido")
-col_c1, col_c2, col_c3 = st.columns([2, 1, 1])
-with col_c1:
-    monto = st.number_input("Monto", min_value=0.0, value=10000.0, step=100.0)
-with col_c2:
-    desde = st.selectbox("Desde", ["CLP", "USD", "EUR"], index=0)
-with col_c3:
-    hacia = st.selectbox("Hacia", ["USD", "CLP", "EUR"], index=1)
+
+monto = st.text_input("Monto", "10000")
+
+col1, col2 = st.columns(2)
+with col1:
+    desde = st.selectbox("Desde", ["CLP", "USD", "EUR", "PEN", "ARS"])
+
+with col2:
+    hacia = st.selectbox("Hacia", ["USD", "CLP", "EUR", "PEN", "ARS"])
 
 if st.button("Convertir"):
-    resultado = convertir_divisa(monto, desde, hacia)
-    if resultado is not None:
-        st.success(f"{monto:,.2f} {desde} ≈ {resultado:,.2f} {hacia}")
+    try:
+        monto_float = float(monto.replace(",", "."))
+    except:
+        st.error("Formato de monto inválido.")
     else:
-        st.error("No se pudo obtener la tasa de cambio. Intenta nuevamente más tarde.")
+        resultado, error = convertir_divisa(monto_float, desde, hacia)
 
-st.caption("Fuente: exchangerate.host (servicio gratuito de tasas de cambio).")
+        if error:
+            st.error(error)
+        else:
+            st.success(f"{monto_float:.2f} {desde} = **{resultado:.2f} {hacia}**")
+
+st.caption("Fuente: frankfurter.app (Banco Central Europeo)")
+
