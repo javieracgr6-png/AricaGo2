@@ -230,8 +230,3 @@ if st.button("Convertir"):
             st.success(f"{monto_float:.2f} {desde} = **{resultado:.2f} {hacia}**")
 
 st.caption("Fuente: currencyapi.com")
-
-            st.success(f"{monto_float:.2f} {desde} = **{resultado:.2f} {hacia}**")
-
-st.caption("Fuente: frankfurter.app (Banco Central Europeo)")
-
